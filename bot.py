@@ -54,7 +54,7 @@ async def report(slug: str, context: ContextTypes.DEFAULT_TYPE) -> str:
         return render(await get_summary(slug, context))
     except Exception as e:  # network / format problems — tell the user instead of crashing
         log.exception("fetch failed for %s", slug)
-        return f"⚠️ {CHECKPOINTS[slug]['name']}: couldn't load data ({type(e).__name__})."
+        return f"⚠️ {CHECKPOINTS[slug]['name']}: couldn't load data ({type(e).__name__}: {str(e)[:120]})."
 
 
 async def build(slugs: list[str], context: ContextTypes.DEFAULT_TYPE) -> str:
