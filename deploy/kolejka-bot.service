@@ -1,0 +1,15 @@
+[Unit]
+Description=Kolejka Telegram bot (border queue)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/kolejka_bot
+EnvironmentFile=/home/ubuntu/kolejka_bot/.env
+ExecStart=/home/ubuntu/kolejka_bot/.venv/bin/python bot.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
