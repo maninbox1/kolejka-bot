@@ -100,6 +100,15 @@ class BrowserFetcher:
                 data = json.loads(await resp.text())
             except Exception:
                 return  # empty/preflight body — wait for the real one
+            # The site only fills the lists for requests that passed its bot check (the page then
+            # sends x-api-* headers). Without them it answers 200 with EMPTY lists — never treat
+            # that as "0 cars"; wait for the page's authorised request instead.
+            headers = await resp.request.all_headers()
+            authorised = "x-api-token" in headers
+            vehicles = sum(len(v) for v in data.values() if isinstance(v, list))
+            log.info("[%s] %s %s: authorised=%s vehicles=%s", slug, el(), key, authorised, vehicles)
+            if not authorised:
+                return
             if not got[key].done():
                 got[key].set_result(data)
 
