@@ -23,7 +23,8 @@ logging.basicConfig(format="%(asctime)s %(levelname)s %(name)s: %(message)s", le
 logging.getLogger("httpx").setLevel(logging.WARNING)
 log = logging.getLogger("kolejka")
 
-CACHE_TTL = 60  # seconds — don't hit the site more than once a minute per checkpoint
+CACHE_TTL = 120  # seconds — reuse a result for 2 min (loading is slow on small hosts)
+LOADING = "⏳ Loading… this can take 1–3 minutes."
 _cache: dict[str, tuple[float, Summary]] = {}
 
 PUBLIC_URL = os.environ.get("WEBHOOK_URL") or os.environ.get("RENDER_EXTERNAL_URL")
@@ -72,8 +73,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 def command(slugs: list[str]):
     async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        msg = await update.message.reply_text(LOADING)
         text = await build(slugs, context)
-        await update.message.reply_text(text, parse_mode=ParseMode.HTML, reply_markup=MAIN_KB)
+        await msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=MAIN_KB)
     return handler
 
 
@@ -82,8 +84,9 @@ async def on_queue_button(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     await q.answer("Loading…")
     what = q.data.split(":", 1)[-1]  # also accepts legacy buttons without the "q:" prefix
     slugs = list(CHECKPOINTS) if what == "all" else [what]
+    msg = await q.message.reply_text(LOADING)
     text = await build(slugs, context)
-    await q.message.reply_text(text, parse_mode=ParseMode.HTML, reply_markup=MAIN_KB)
+    await msg.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=MAIN_KB)
 
 
 # ---------- alarm setup (border -> until -> interval) ----------

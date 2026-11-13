@@ -21,7 +21,7 @@ log = logging.getLogger("kolejka.fetcher")
 
 ZONE_URL = "https://mon.declarant.by/#/zone/{slug}"
 # Small hosts (Render free = 0.1 CPU) need a lot longer than a laptop to boot Chrome + the page.
-TIMEOUT_S = int(os.environ.get("FETCH_TIMEOUT_S", "90"))
+TIMEOUT_S = int(os.environ.get("FETCH_TIMEOUT_S", "180"))
 
 BLOCKED_TYPES = {"image", "font", "media", "stylesheet"}
 BLOCKED_HOSTS = ("mc.yandex.ru", "yandex.ru", "google-analytics.com", "googletagmanager.com")
@@ -118,8 +118,8 @@ class BrowserFetcher:
             log.info("[%s] %s data received", slug, el())
             return queue, stats
         except asyncio.CancelledError:
-            log.warning("[%s] %s timed out; got queue=%s stats=%s", slug, el(),
-                        got["queue"].done(), got["stats"].done())
+            log.warning("[%s] %s timed out; received queue=%s stats=%s", slug, el(),
+                        *(f.done() and not f.cancelled() for f in (got["queue"], got["stats"])))
             raise
         finally:
             await ctx.close()
