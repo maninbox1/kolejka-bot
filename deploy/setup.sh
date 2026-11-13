@@ -28,7 +28,10 @@ if [ ! -f .env ]; then
 fi
 
 # 4. Run as a service: starts on boot, restarts on crash
-sudo cp deploy/kolejka-bot.service /etc/systemd/system/
+# (fill in the real user and folder: "ubuntu" on Oracle, your Google name on GCP, etc.)
+sed -e "s|^User=.*|User=$(whoami)|" \
+    -e "s|/home/ubuntu/kolejka_bot|$(pwd)|g" \
+    deploy/kolejka-bot.service | sudo tee /etc/systemd/system/kolejka-bot.service > /dev/null
 sudo systemctl daemon-reload
 sudo systemctl enable --now kolejka-bot
 sleep 5
