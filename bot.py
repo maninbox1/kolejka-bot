@@ -10,7 +10,7 @@ import time
 from datetime import datetime, timedelta
 
 import httpx
-from telegram import InlineKeyboardButton as Btn, InlineKeyboardMarkup, Update
+from telegram import BotCommand, InlineKeyboardButton as Btn, InlineKeyboardMarkup, Update
 from telegram.constants import ParseMode
 from telegram.ext import (Application, CallbackQueryHandler, CommandHandler, ContextTypes,
                           MessageHandler, filters)
@@ -294,8 +294,19 @@ async def keepalive(context: ContextTypes.DEFAULT_TYPE) -> None:
 
 # ---------- app ----------
 
+COMMANDS = [
+    BotCommand("start", "Main menu"),
+    BotCommand("bruzgi", "Queue at Брузги"),
+    BotCommand("berestovitsa", "Queue at Берестовица"),
+    BotCommand("all", "Both crossings"),
+    BotCommand("alarm", "Set an alarm"),
+    BotCommand("alarms", "My alarms"),
+]
+
+
 async def post_init(app: Application) -> None:
     app.bot_data["fetcher"] = BrowserFetcher()  # browser starts on first request
+    await app.bot.set_my_commands(COMMANDS)  # fills Telegram's "Menu" button next to the input
 
 
 async def post_shutdown(app: Application) -> None:
