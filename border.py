@@ -53,6 +53,9 @@ class Summary:
     estimate: timedelta | None         # how long you'd wait if you registered now
     estimate_low: timedelta | None
     estimate_high: timedelta | None
+    # False when the site returned no vehicles at all although cars are passing the checkpoint —
+    # i.e. it withheld the list from us. Then in_queue/estimate must NOT be read as "0 cars".
+    queue_available: bool = True
 
 
 def _status(v: dict) -> int | None:
@@ -110,6 +113,15 @@ def summarise(name: str, queue: dict, stats: dict, vehicle: str = "car",
             seconds=statistics.median(c.total_seconds() for c in candidates))
         low, high = min(candidates), max(candidates)
 
+    total_vehicles = sum(len(v) for v in queue.values() if isinstance(v, list))
+    if total_vehicles == 0 and (hour or day):
+        estimate = low = high = None
+        return Summary(name=name, now=now, in_queue=0, priority_waiting=0,
+                       sent_last_hour=hour, sent_last_day=day, first_registered=None,
+                       last_registered=None, last_called_at=None, recent_actual_wait=None,
+                       estimate=None, estimate_low=None, estimate_high=None,
+                       queue_available=False)
+
     return Summary(
         name=name,
         now=now,
@@ -146,6 +158,18 @@ def fmt_dt(dt: datetime | None, now: datetime) -> str:
 
 
 def render(s: Summary) -> str:
+    if not s.queue_available:
+        return "\n".join([
+            f"🚗 <b>{s.name}</b> — passenger cars",
+            f"<i>as of {s.now:%d.%m.%Y %H:%M} (Minsk)</i>",
+            "",
+            f"Sent to checkpoint, last hour: <b>{s.sent_last_hour}</b>",
+            f"Sent to checkpoint, last 24h: <b>{s.sent_last_day}</b>",
+            "",
+            "⚠️ Queue list unavailable: the site returned an empty list to the bot although cars "
+            "are passing. Cars in queue and wait time can't be shown — check "
+            "https://mon.declarant.by/#/zone",
+        ])
     lines = [
         f"🚗 <b>{s.name}</b> — passenger cars",
         f"<i>as of {s.now:%d.%m.%Y %H:%M} (Minsk)</i>",

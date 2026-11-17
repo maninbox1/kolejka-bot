@@ -55,3 +55,12 @@ def test_render():
     text = render(summarise("Брузги", QUEUE, STATS, now=NOW))
     assert "In queue now: <b>4</b> (+1 priority)" in text
     assert "~2h 30m" in text
+
+
+def test_empty_lists_with_traffic_mean_unavailable_not_zero():
+    empty = {k: [] for k in ("carLiveQueue", "carPriority", "truckLiveQueue")}
+    s = summarise("Брузги", empty, {"carLastHour": 27, "carLastDay": 402}, now=NOW)
+    assert s.queue_available is False and s.estimate is None
+    text = render(s)
+    assert "Queue list unavailable" in text and "In queue now" not in text
+    assert "<b>27</b>" in text

@@ -224,10 +224,20 @@ async def alarm_tick(context: ContextTypes.DEFAULT_TYPE) -> None:
 
     try:
         s = await get_summary(slug, context)
-        reasons = alarm_reasons(s)
-        d["last"] = (f"{now:%H:%M}: {s.in_queue} cars, wait ~{fmt_td(s.estimate)}"
-                     + (" 🚨" if reasons else " ✅"))
         d.pop("failed", None)
+        if s.queue_available:
+            reasons = alarm_reasons(s)
+            d["last"] = (f"{now:%H:%M}: {s.in_queue} cars, wait ~{fmt_td(s.estimate)}"
+                         + (" 🚨" if reasons else " ✅"))
+        else:  # site withheld the list — never treat that as "0 cars, all fine"
+            reasons = []
+            d["last"] = f"{now:%H:%M}: queue list unavailable from the site ⚠️"
+            if not d.get("unavailable_notified"):  # tell once, quietly; keep checking
+                d["unavailable_notified"] = True
+                await context.bot.send_message(
+                    job.chat_id, f"⚠️ {name}: the site isn't giving the bot the queue list right "
+                    "now, so this alarm can't judge the queue. I'll keep checking.",
+                    disable_notification=True)
         if reasons:
             await context.bot.send_message(
                 job.chat_id,
